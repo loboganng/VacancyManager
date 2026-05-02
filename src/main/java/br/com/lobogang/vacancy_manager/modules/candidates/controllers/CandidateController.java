@@ -29,6 +29,5 @@ public class CandidateController {
     } catch (Exception e) {
       return ResponseEntity.badRequest().body(e.getMessage());
     }
-
   }
 }
