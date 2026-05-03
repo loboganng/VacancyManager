@@ -11,7 +11,6 @@ import br.com.lobogang.vacancy_manager.modules.company.repositories.CompanyRepos
 @Service
 public class CreateCompanyUseCase {
 
-
   @Autowired
   private CompanyRepository companyRepository;
 
