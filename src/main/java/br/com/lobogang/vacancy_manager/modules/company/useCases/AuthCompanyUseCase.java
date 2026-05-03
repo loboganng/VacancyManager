@@ -1,8 +1,51 @@
 package br.com.lobogang.vacancy_manager.modules.company.useCases;
 
+import javax.naming.AuthenticationException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+
+import br.com.lobogang.vacancy_manager.modules.company.dto.AuthCompanyDTO;
+import br.com.lobogang.vacancy_manager.modules.company.repositories.CompanyRepository;
 
 @Service
 public class AuthCompanyUseCase {
-  
+
+  // Para verificar se a empresa existe, checamos o email e a senha, para isso
+  // precisamos do repositório da empresa
+
+  @Autowired
+  private CompanyRepository companyRepository;
+
+  @Autowired
+  private PasswordEncoder passwordEncoder;
+
+  public void execute(AuthCompanyDTO authCompanyDTO) throws AuthenticationException {
+    // Verificando se a empresa existe ou não, e lançando um erro
+    var company = this.companyRepository.findByUsername(authCompanyDTO.getUsername()).orElseThrow(
+        () -> {
+          throw new UsernameNotFoundException("Company not found");
+        });
+
+    // Veriricando se as senhas são iguais
+    // Recebemos a senha do login e a senha salva no banco de dados
+    var passwordMatches = this.passwordEncoder.matches(authCompanyDTO.getPassword(), company.getPassword());
+
+    // Se não for igual -> Erro
+    if (!passwordMatches) {
+      throw new AuthenticationException();
+    }
+    // Se for igual -> Gerar token
+    Algorithm algorithm = Algorithm.HMAC256(null)
+    JWT.create().withIssuer("javagas")
+    .withSubject(company.getId().toString());
+
+
+
+  }
 }
