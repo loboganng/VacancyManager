@@ -11,4 +11,7 @@ public interface CandidateRepository extends JpaRepository<CandidateEntity, UUID
   
   // Agora criaremos um padrão para que o Spring não permita criação de usuários com o mesmo email ou username
   Optional<CandidateEntity> findByUsernameOrEmail(String username, String email);
+
+  // Método para encontrar o candidato pelo username, utilizado na autenticação
+  Optional<CandidateEntity> findByUsername(String username);
 }
