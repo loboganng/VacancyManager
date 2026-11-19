@@ -14,31 +14,45 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 public class ExceptionHandlerController {
 
-// Criando a interface MessaSource para poder pegar as mensagens de erro do arquivo messages.properties
+  // Criando a interface MessaSource para poder pegar as mensagens de erro do arquivo messages.properties
   private MessageSource messageSource;
 
   // Precisamos inicializar o MessageSource para poder usar ele no método de tratamento de exceção
   // E para que o Spring não inicialize como null, precisamos criar um construtor para injetar o MessageSource
-  public ExceptionHandlerController(MessageSource message){
+  public ExceptionHandlerController(MessageSource message) {
     this.messageSource = message;
   }
 
-// Função para tratar as exceções de validação dos campos, ou seja, quando o usuário enviar um campo vazio ou com um formato inválido, o Spring vai lançar uma exceção do tipo MethodArgumentNotValidException, e esse método vai tratar essa exceção e retornar uma lista de mensagens de erro para o usuário, onde cada mensagem de erro vai conter a mensagem de erro e o nome do campo que causou o erro.
+  // Trata os erros de validação dos campos (@Valid): devolve uma lista com a mensagem e o campo que causou o erro.
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<List<ErrorMessageDTO>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e){
-    
-    // Criando um array para armazenar as mensagens de erro, onde cada mensagem de erro vai conter a mensagem de erro e o nome do campo que causou o erro.
+  public ResponseEntity<List<ErrorMessageDTO>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
     List<ErrorMessageDTO> dto = new ArrayList<>();
-    
-    // Função para percorrer a lista de erros de validação dos campos, onde cada erro de validação vai conter o nome do campo que causou o erro e a mensagem de erro, e vamos adicionar essa mensagem de erro na lista de mensagens de erro que criamos anteriormente.
+
     e.getBindingResult().getFieldErrors().forEach(err -> {
       String message = messageSource.getMessage(err, LocaleContextHolder.getLocale());
-      ErrorMessageDTO error = new ErrorMessageDTO(message, err.getField());
-      dto.add(error);
+      dto.add(new ErrorMessageDTO(message, err.getField()));
     });
-    
-    // Retornamos uma ResponseEntity com a lista de mensagens de erro e o status HTTP 400 (Bad Request)
+
     return new ResponseEntity<>(dto, HttpStatus.BAD_REQUEST);
   }
-  
+
+  // Erros de regra de negócio: cada exceção vira um status HTTP, sem try/catch nos controllers.
+  @ExceptionHandler({ UserFoundException.class, ApplicationAlreadyExistsException.class })
+  public ResponseEntity<ErrorMessageDTO> handleConflict(RuntimeException e) {
+    return error(HttpStatus.CONFLICT, e);
+  }
+
+  @ExceptionHandler({ UserNotFoundException.class, JobNotFoundException.class })
+  public ResponseEntity<ErrorMessageDTO> handleNotFound(RuntimeException e) {
+    return error(HttpStatus.NOT_FOUND, e);
+  }
+
+  @ExceptionHandler(InvalidCredentialsException.class)
+  public ResponseEntity<ErrorMessageDTO> handleInvalidCredentials(InvalidCredentialsException e) {
+    return error(HttpStatus.UNAUTHORIZED, e);
+  }
+
+  private ResponseEntity<ErrorMessageDTO> error(HttpStatus status, RuntimeException e) {
+    return ResponseEntity.status(status).body(new ErrorMessageDTO(e.getMessage(), null));
+  }
 }

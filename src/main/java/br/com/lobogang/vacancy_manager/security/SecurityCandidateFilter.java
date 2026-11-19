@@ -28,7 +28,8 @@ public class SecurityCandidateFilter extends OncePerRequestFilter {
     // SecurityContextHolder.getContext().setAuthentication(null);
     String header = request.getHeader("Authorization");
 
-    if (request.getRequestURI().startsWith("/candidate")) {
+    // O login é público: um token velho no header não pode impedir de logar de novo
+    if (request.getRequestURI().startsWith("/candidate") && !request.getRequestURI().equals("/candidate/auth")) {
       if (header != null) {
         var token = this.jwtProvider.validateToken(header);
 

@@ -32,7 +32,8 @@ public class SecurityFilter extends OncePerRequestFilter {
     // Pegando o token do header da requisição
     String header = request.getHeader("Authorization");
 
-    if (request.getRequestURI().startsWith("/company")) {
+    // O login é público: um token velho no header não pode impedir de logar de novo
+    if (request.getRequestURI().startsWith("/company") && !request.getRequestURI().equals("/company/auth")) {
       if (header != null) {
         // Chamando o método validateToken do JWTProvider para validar o token
         var token = this.jwtProvider.validateToken(header);

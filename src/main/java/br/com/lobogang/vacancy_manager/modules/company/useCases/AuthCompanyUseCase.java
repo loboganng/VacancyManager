@@ -4,17 +4,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
-import javax.naming.AuthenticationException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
+import br.com.lobogang.vacancy_manager.exceptions.InvalidCredentialsException;
 import br.com.lobogang.vacancy_manager.modules.company.dto.AuthCompanyDTO;
 import br.com.lobogang.vacancy_manager.modules.company.dto.AuthCompanyResponseDTO;
 import br.com.lobogang.vacancy_manager.modules.company.repositories.CompanyRepository;
@@ -33,12 +31,9 @@ public class AuthCompanyUseCase {
   @Value("${security.token.secret}") // @Value serve para injetar o valor do application.properties
   private String secretKey;
 
-  public AuthCompanyResponseDTO execute(AuthCompanyDTO authCompanyDTO) throws AuthenticationException {
+  public AuthCompanyResponseDTO execute(AuthCompanyDTO authCompanyDTO) {
     // Verificando se a empresa existe ou não, e lançando um erro
-    var company = this.companyRepository.findByUsername(authCompanyDTO.getUsername()).orElseThrow(
-        () -> {
-          throw new UsernameNotFoundException("Username/Password invalid");
-        });
+    var company = this.companyRepository.findByUsername(authCompanyDTO.getUsername()).orElseThrow(InvalidCredentialsException::new);
 
     // Veriricando se as senhas são iguais
     // Recebemos a senha do login e a senha salva no banco de dados
@@ -46,7 +41,7 @@ public class AuthCompanyUseCase {
 
     // Se não for igual -> Erro
     if (!passwordMatches) {
-      throw new AuthenticationException();
+      throw new InvalidCredentialsException();
     }
     // Se for igual -> Gerar token
     Algorithm algorithm = Algorithm.HMAC256(secretKey);
