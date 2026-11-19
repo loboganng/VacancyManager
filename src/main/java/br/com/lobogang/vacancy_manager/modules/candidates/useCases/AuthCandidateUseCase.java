@@ -4,17 +4,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
-import javax.naming.AuthenticationException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
+import br.com.lobogang.vacancy_manager.exceptions.InvalidCredentialsException;
 import br.com.lobogang.vacancy_manager.modules.candidates.CandidateRepository;
 import br.com.lobogang.vacancy_manager.modules.candidates.dto.AuthCandidateRequestDTO;
 import br.com.lobogang.vacancy_manager.modules.candidates.dto.AuthCandidateResponseDTO;
@@ -31,17 +29,14 @@ public class AuthCandidateUseCase {
   @Autowired
   private PasswordEncoder passwordEncoder;
 
-  public AuthCandidateResponseDTO execute(AuthCandidateRequestDTO authCandidateRequestDTO)
-      throws AuthenticationException {
+  public AuthCandidateResponseDTO execute(AuthCandidateRequestDTO authCandidateRequestDTO) {
     var candidate = this.candidateRepository.findByUsername(authCandidateRequestDTO.username())
-        .orElseThrow(() -> {
-          throw new UsernameNotFoundException("Username/password invalid");
-        });
+        .orElseThrow(InvalidCredentialsException::new);
 
     var passwordMatches = this.passwordEncoder.matches(authCandidateRequestDTO.password(), candidate.getPassword());
 
     if (!passwordMatches) {
-      throw new AuthenticationException("Username/password invalid");
+      throw new InvalidCredentialsException();
     }
 
     Algorithm algorithm = Algorithm.HMAC256(secretKey);

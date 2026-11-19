@@ -3,7 +3,7 @@ package br.com.lobogang.vacancy_manager.modules.candidates.useCases;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import br.com.lobogang.vacancy_manager.exceptions.UserNotFoundException;
 import org.springframework.stereotype.Service;
 
 import br.com.lobogang.vacancy_manager.modules.candidates.CandidateRepository;
@@ -16,9 +16,7 @@ public class ProfileCandidateUseCase {
   private CandidateRepository candidateRepository;
   
   public ProfileCandidateResponseDTO execute(UUID idCandidate) {
-    var candidate =this.candidateRepository.findById(idCandidate).orElseThrow(() -> {
-      throw new UsernameNotFoundException("User not found");
-    });
+    var candidate =this.candidateRepository.findById(idCandidate).orElseThrow(UserNotFoundException::new);
 
     var candidateDTO = ProfileCandidateResponseDTO.builder().description(candidate.getDescription()).username(candidate.getUsername()).email(candidate.getEmail()).name(candidate.getName()).id(candidate.getId()).build();
 
